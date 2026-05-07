@@ -73,7 +73,7 @@ export default function CameraCard({ camera }: Props) {
             <Zap
               size={13}
               className={motion ? 'text-yellow-400' : 'text-gray-600'}
-              title="Motion detection"
+              aria-label="Motion detection"
             />
           )}
           <button onClick={toggleRecord} title={recording ? 'Stop recording' : 'Start recording'}>

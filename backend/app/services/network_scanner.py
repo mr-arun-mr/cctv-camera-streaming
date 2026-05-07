@@ -1,7 +1,7 @@
 import asyncio
 import logging
 import socket
-import netifaces
+import psutil
 
 logger = logging.getLogger(__name__)
 
@@ -9,27 +9,18 @@ _scan_jobs: dict[str, dict] = {}  # job_id -> {status, results}
 
 
 def _get_local_subnet() -> str:
-    gws = netifaces.gateways()
-    default = gws.get("default", {})
-    iface = None
-    for af, gw_info in default.items():
-        if isinstance(gw_info, (list, tuple)) and len(gw_info) >= 2:
-            iface = gw_info[1]
-            break
-    if iface is None:
-        ifaces = netifaces.interfaces()
-        for i in ifaces:
-            if i != "lo":
-                iface = i
-                break
-    if iface is None:
-        return "192.168.1.0/24"
-    addrs = netifaces.ifaddresses(iface).get(netifaces.AF_INET, [])
-    if not addrs:
-        return "192.168.1.0/24"
-    ip = addrs[0]["addr"]
-    parts = ip.split(".")
-    return f"{parts[0]}.{parts[1]}.{parts[2]}.0/24"
+    try:
+        addrs = psutil.net_if_addrs()
+        for iface, addr_list in addrs.items():
+            if iface == "lo":
+                continue
+            for addr in addr_list:
+                if addr.family == socket.AF_INET and not addr.address.startswith("127."):
+                    parts = addr.address.split(".")
+                    return f"{parts[0]}.{parts[1]}.{parts[2]}.0/24"
+    except Exception:
+        pass
+    return "192.168.1.0/24"
 
 
 async def _probe_rtsp_port(ip: str, port: int, timeout: float = 1.0) -> bool:

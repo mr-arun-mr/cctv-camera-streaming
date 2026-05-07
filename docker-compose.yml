@@ -6,10 +6,10 @@ services:
       - ./backend/recordings:/app/recordings
       - ./backend/hls:/app/hls
       - ./data/cctv.db:/app/cctv.db
-    devices:
-      # Pass through webcam and USB capture card devices
-      # Add more devices as needed: - /dev/video1:/dev/video1
-      - /dev/video0:/dev/video0
+    # Uncomment and add your webcam/capture card devices when connected:
+    # devices:
+    #   - /dev/video0:/dev/video0
+    #   - /dev/video1:/dev/video1
     environment:
       - DATABASE_URL=sqlite+aiosqlite:////app/cctv.db
       - HLS_DIR=/app/hls

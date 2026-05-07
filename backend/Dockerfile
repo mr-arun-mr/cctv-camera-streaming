@@ -1,17 +1,23 @@
-FROM python:3.11-slim
+FROM python:3.11-slim-bullseye
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    ffmpeg \
-    nmap \
-    libgl1 \
-    libglib2.0-0 \
-    v4l-utils \
-    && rm -rf /var/lib/apt/lists/*
+# Inject proxy CA cert so pip SSL works
+COPY proxy-ca.crt /tmp/proxy-ca.crt
+
+ENV SSL_CERT_FILE=/tmp/proxy-ca.crt
+ENV REQUESTS_CA_BUNDLE=/tmp/proxy-ca.crt
 
 WORKDIR /app
 
+# Install Python packages from pre-downloaded wheels (no network access needed)
+COPY pip-cache /pip-cache
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-index --find-links /pip-cache -r requirements.txt && \
+    rm -rf /pip-cache
+
+# Install static ffmpeg/ffprobe binaries (no apt needed)
+COPY ffmpeg-static /usr/local/bin/ffmpeg
+COPY ffprobe-static /usr/local/bin/ffprobe
+RUN chmod +x /usr/local/bin/ffmpeg /usr/local/bin/ffprobe
 
 COPY app ./app
 

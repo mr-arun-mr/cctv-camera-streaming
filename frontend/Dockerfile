@@ -1,6 +1,11 @@
 # Build stage
 FROM node:20-alpine AS build
 WORKDIR /app
+
+# Inject proxy CA cert so npm SSL works
+COPY proxy-ca.crt /tmp/proxy-ca.crt
+ENV NODE_EXTRA_CA_CERTS=/tmp/proxy-ca.crt
+
 COPY package.json ./
 RUN npm install
 COPY . .
