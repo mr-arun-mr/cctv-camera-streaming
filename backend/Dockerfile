@@ -1,27 +1,23 @@
-FROM python:3.11-slim-bullseye
-
-# Inject proxy CA cert so pip SSL works
-COPY proxy-ca.crt /tmp/proxy-ca.crt
-
-ENV SSL_CERT_FILE=/tmp/proxy-ca.crt
-ENV REQUESTS_CA_BUNDLE=/tmp/proxy-ca.crt
+FROM python:3.11-slim
 
 WORKDIR /app
 
-# Install Python packages from pre-downloaded wheels (no network access needed)
-COPY pip-cache /pip-cache
-COPY requirements.txt .
-RUN pip install --no-index --find-links /pip-cache -r requirements.txt && \
-    rm -rf /pip-cache
+# Trust proxy CA so apt-get and pip can reach the internet
+COPY proxy-ca.crt /usr/local/share/ca-certificates/proxy-ca.crt
+RUN update-ca-certificates
 
-# Install static ffmpeg/ffprobe binaries (no apt needed)
-COPY ffmpeg-static /usr/local/bin/ffmpeg
-COPY ffprobe-static /usr/local/bin/ffprobe
-RUN chmod +x /usr/local/bin/ffmpeg /usr/local/bin/ffprobe
+ENV SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt
+ENV REQUESTS_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt
+
+RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg && \
+    rm -rf /var/lib/apt/lists/*
+
+COPY requirements.txt .
+RUN pip install -r requirements.txt
 
 COPY app ./app
 
-RUN mkdir -p /app/hls /app/recordings
+RUN mkdir -p /app/hls /app/recordings /app/data
 
 EXPOSE 8000
 

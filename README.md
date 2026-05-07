@@ -29,7 +29,7 @@ docker compose up -d
 
 Open `http://localhost` in your browser.
 
-### USB Webcams / Capture Cards
+### USB Webcams / Capture Cards (Linux)
 
 Uncomment and adjust the `devices` block in `docker-compose.yml`:
 
@@ -40,6 +40,48 @@ services:
       - /dev/video0:/dev/video0
       - /dev/video1:/dev/video1
 ```
+
+### Mac Webcam via RTSP
+
+Docker Desktop on Mac cannot pass through camera devices directly. Use mediamtx to bridge your Mac webcam into an RTSP stream that the container can reach.
+
+**1. Install dependencies**
+
+```bash
+brew install mediamtx ffmpeg
+```
+
+**2. Start the RTSP server**
+
+```bash
+mediamtx /opt/homebrew/etc/mediamtx/mediamtx.yml &
+```
+
+**3. List available cameras**
+
+```bash
+ffmpeg -f avfoundation -list_devices true -i "" 2>&1 | grep "AVFoundation video" -A10
+```
+
+**4. Stream your webcam** (replace `0` with your camera index)
+
+```bash
+ffmpeg -f avfoundation -framerate 30 -video_size 1280x720 -i "0" \
+  -c:v libx264 -preset ultrafast -tune zerolatency -b:v 2M \
+  -f flv rtmp://localhost:1935/webcam
+```
+
+**5. Add the camera in the app**
+
+Go to **Discover → Add Camera** and enter:
+
+| Field | Value |
+|---|---|
+| Name | MacBook Webcam (or any label) |
+| URL | `rtsp://host.docker.internal:8554/webcam` |
+| Type | IP |
+
+mediamtx bridges the RTMP input on port 1935 to an RTSP output on port 8554. The `host.docker.internal` hostname lets the container reach your Mac.
 
 ## Project Structure
 
