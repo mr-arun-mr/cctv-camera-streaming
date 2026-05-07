@@ -1,0 +1,35 @@
+services:
+  backend:
+    build: ./backend
+    network_mode: host   # Required for nmap LAN scanning and ONVIF multicast discovery
+    volumes:
+      - ./backend/recordings:/app/recordings
+      - ./backend/hls:/app/hls
+      - ./data/cctv.db:/app/cctv.db
+    # Uncomment and add your webcam/capture card devices when connected:
+    # devices:
+    #   - /dev/video0:/dev/video0
+    #   - /dev/video1:/dev/video1
+    environment:
+      - DATABASE_URL=sqlite+aiosqlite:////app/cctv.db
+      - HLS_DIR=/app/hls
+      - RECORDINGS_DIR=/app/recordings
+      - HLS_SEGMENT_TIME=2
+      - HLS_LIST_SIZE=5
+      - MOTION_COOLDOWN_SECONDS=30
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "80:80"
+    extra_hosts:
+      - "backend:host-gateway"   # Allows nginx to reach backend on host network
+    depends_on:
+      - backend
+    restart: unless-stopped
