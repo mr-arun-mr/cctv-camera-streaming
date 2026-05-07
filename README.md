@@ -57,13 +57,26 @@ brew install mediamtx ffmpeg
 mediamtx /opt/homebrew/etc/mediamtx/mediamtx.yml &
 ```
 
-**3. List available cameras**
+**3. List available cameras and microphones**
 
 ```bash
-ffmpeg -f avfoundation -list_devices true -i "" 2>&1 | grep "AVFoundation video" -A10
+ffmpeg -f avfoundation -list_devices true -i "" 2>&1 | grep -A20 "AVFoundation"
 ```
 
-**4. Stream your webcam** (replace `0` with your camera index)
+Note the index of your camera (under `AVFoundation video devices`) and microphone (under `AVFoundation audio devices`).
+
+**4. Stream your webcam with audio** (replace `0` with your camera index, `1` with your audio index)
+
+The `-i "video:audio"` syntax selects both devices in a single input:
+
+```bash
+ffmpeg -f avfoundation -framerate 30 -video_size 1280x720 -i "0:1" \
+  -c:v libx264 -preset ultrafast -tune zerolatency -b:v 2M \
+  -c:a aac -b:a 128k \
+  -f flv rtmp://localhost:1935/webcam
+```
+
+To stream video only (no audio), omit the audio index:
 
 ```bash
 ffmpeg -f avfoundation -framerate 30 -video_size 1280x720 -i "0" \
