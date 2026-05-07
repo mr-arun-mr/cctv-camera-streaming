@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+*.egg-info/
+
+# Node
+node_modules/
+frontend/dist/
+
+# Data
+backend/hls/*/
+backend/recordings/
+data/*.db
+*.db-shm
+*.db-wal
+
+# Env
+.env
+*.env.local
+
+# IDE
+.vscode/
+.idea/
